@@ -11,8 +11,13 @@ import okhttp3.mockwebserver.RecordedRequest
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.ArgumentMatchers.anySet
+import org.mockito.Mockito
+import org.mockito.Mockito.`when`
+import org.mockito.Mockito.mock
 import org.robolectric.RobolectricTestRunner
 import java.net.URL
+import javax.net.ssl.SSLSocketFactory
 
 @RunWith(RobolectricTestRunner::class)
 class HttpURLConnectionHttpClientTest {
@@ -25,6 +30,22 @@ class HttpURLConnectionHttpClientTest {
         } finally {
             server.shutdown()
         }
+    }
+
+    @Test(expected = ExperimentDownloadException::class)
+    fun testCertificatePinningInvalid() {
+        val pinner = mock(CertificatePinner::class.java)
+        `when`(pinner.checkCertificatePinning(any(), anySet(), any())).thenReturn(false)
+        val server = MockWebServer()
+        server.useHttps(SSLSocketFactory.getDefault() as SSLSocketFactory?, false)
+        server.enqueue(MockResponse().setBody("Test"))
+        HttpURLConnectionHttpClient().get(server.url("/").url())
+        server.shutdown()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> any(): T {
+        return Mockito.any<T>() ?: null as T
     }
 
     @Test(expected = ExperimentDownloadException::class)

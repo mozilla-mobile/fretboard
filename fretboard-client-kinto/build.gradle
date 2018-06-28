@@ -11,6 +11,8 @@ android {
     defaultConfig {
         minSdkVersion rootProject.ext.build['minSdkVersion']
         targetSdkVersion rootProject.ext.build['targetSdkVersion']
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 
     lintOptions {
@@ -35,4 +37,12 @@ dependencies {
     testImplementation "org.robolectric:robolectric:${rootProject.ext.dependencies['robolectric']}"
     testImplementation "org.mockito:mockito-core:${rootProject.ext.dependencies['mockito']}"
     testImplementation "com.squareup.okhttp3:mockwebserver:${rootProject.ext.dependencies['mockwebserver']}"
+    androidTestImplementation "com.android.support.test:runner:${rootProject.ext.dependencies['runner']}"
+    androidTestImplementation "com.android.support:support-annotations:${rootProject.ext.dependencies['annotations']}"
+    androidTestImplementation "com.squareup.okhttp3:mockwebserver:${rootProject.ext.dependencies['mockwebserver']}"
+    // force use BouncyCastle 1.50 to avoid problems with MockWebServer, see https://github.com/square/okhttp/issues/3672
+    // noinspection GradleDependency
+    androidTestImplementation ("org.bouncycastle:bcprov-jdk15on:1.50") {
+        force = true
+    }
 }

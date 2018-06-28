@@ -19,4 +19,11 @@ interface ExperimentSource {
      * @return modified list of experiments
      */
     fun getExperiments(experiments: List<Experiment>): List<Experiment>
+
+    /**
+     * Enables certificate pinning using the provided keys
+     *
+     * @keys set of base64 encoded SHA-256 certificate subject public key info hashes
+     */
+    fun pinCertificates(keys: Set<String>)
 }
