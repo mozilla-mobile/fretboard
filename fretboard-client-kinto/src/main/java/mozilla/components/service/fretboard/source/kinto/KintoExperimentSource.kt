@@ -29,6 +29,10 @@ class KintoExperimentSource(
         return mergeExperimentsFromDiff(experimentsDiff, experiments)
     }
 
+    override fun pinCertificates(keys: Set<String>) {
+        client.pinCertificates(keys)
+    }
+
     private fun getExperimentsDiff(client: HttpClient, experiments: List<Experiment>): String {
         val lastModified = getMaxLastModified(experiments)
         val kintoClient = KintoClient(client, baseUrl, bucketName, collectionName)
