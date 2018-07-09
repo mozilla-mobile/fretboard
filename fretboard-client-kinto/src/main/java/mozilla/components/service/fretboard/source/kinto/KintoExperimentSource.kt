@@ -4,11 +4,17 @@
 
 package mozilla.components.service.fretboard.source.kinto
 
+import android.util.Base64
 import mozilla.components.service.fretboard.Experiment
+import mozilla.components.service.fretboard.ExperimentDownloadException
 import mozilla.components.service.fretboard.ExperimentSource
 import mozilla.components.service.fretboard.JSONExperimentParser
 import org.json.JSONArray
 import org.json.JSONObject
+import java.nio.charset.StandardCharsets
+import java.security.KeyFactory
+import java.security.Signature
+import java.security.spec.X509EncodedKeySpec
 
 /**
  * Class responsible for fetching and
@@ -24,14 +30,49 @@ class KintoExperimentSource(
     val collectionName: String,
     private val client: HttpClient = HttpURLConnectionHttpClient()
 ) : ExperimentSource {
+    var validateSignature = false
+    private val kintoClient = KintoClient(client, baseUrl, bucketName, collectionName)
+
     override fun getExperiments(experiments: List<Experiment>): List<Experiment> {
         val experimentsDiff = getExperimentsDiff(client, experiments)
-        return mergeExperimentsFromDiff(experimentsDiff, experiments)
+        val updatedExperiments = mergeExperimentsFromDiff(experimentsDiff, experiments)
+        if (validateSignature && !validSignature(updatedExperiments)) {
+            throw ExperimentDownloadException("Signature verification failed")
+        }
+        return updatedExperiments
+    }
+
+    private fun validSignature(experiments: List<Experiment>): Boolean {
+        val sortedExperiments = experiments.sortedBy { it.id }
+        val resultJson = JSONArray()
+        val parser = JSONExperimentParser()
+        for (experiment in sortedExperiments) {
+            resultJson.put(parser.toJson(experiment))
+        }
+        val metadata = kintoClient.getMetadata()
+        val metadataJson = JSONObject(metadata).getJSONObject("data")
+        val signatureJson = metadataJson.getJSONObject("signature")
+        val signature = signatureJson.getString("signature")
+        val publicKey = signatureJson.getString("public_key")
+        val lastModified = metadataJson.getLong("last_modified")
+        val signedJson = "{'data':$resultJson, 'last_modified':\"$lastModified\"}"
+        return validSignature(signedJson, signature, publicKey)
+    }
+
+    private fun validSignature(signedJson: String, signature: String, publicKeyString: String): Boolean {
+        val publicKeyBytes = Base64.decode(publicKeyString, 0)
+        val spec = X509EncodedKeySpec(publicKeyBytes)
+        val keyFactory = KeyFactory.getInstance("EC")
+        val publicKey = keyFactory.generatePublic(spec)
+        val dsa = Signature.getInstance("SHA384withECDSA")
+        dsa.initVerify(publicKey)
+        dsa.update(signedJson.toByteArray(StandardCharsets.UTF_8))
+        val signatureBytes = Base64.decode(signature.replace("-", "+").replace("_", "/"), 0)
+        return dsa.verify(signatureBytes)
     }
 
     private fun getExperimentsDiff(client: HttpClient, experiments: List<Experiment>): String {
         val lastModified = getMaxLastModified(experiments)
-        val kintoClient = KintoClient(client, baseUrl, bucketName, collectionName)
         return if (lastModified != null) {
             kintoClient.diff(lastModified)
         } else {
