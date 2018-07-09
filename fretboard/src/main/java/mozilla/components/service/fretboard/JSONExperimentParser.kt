@@ -53,12 +53,10 @@ class JSONExperimentParser {
      */
     fun toJson(experiment: Experiment): JSONObject {
         val jsonObject = JSONObject()
-        jsonObject.putIfNotNull(NAME_KEY, experiment.name)
         val matchObject = JSONObject()
-        matchObject.putIfNotNull(LANG_KEY, experiment.match?.language)
         matchObject.putIfNotNull(APP_ID_KEY, experiment.match?.appId)
+        matchObject.putIfNotNull(LANG_KEY, experiment.match?.language)
         matchObject.putIfNotNull(REGIONS_KEY, experiment.match?.regions?.toJsonArray())
-        jsonObject.put(MATCH_KEY, matchObject)
         val bucketsObject = JSONObject()
         bucketsObject.putIfNotNull(MAX_KEY, experiment.bucket?.max)
         bucketsObject.putIfNotNull(MIN_KEY, experiment.bucket?.min)
@@ -66,6 +64,8 @@ class JSONExperimentParser {
         jsonObject.putIfNotNull(DESCRIPTION_KEY, experiment.description)
         jsonObject.put(ID_KEY, experiment.id)
         jsonObject.putIfNotNull(LAST_MODIFIED_KEY, experiment.lastModified)
+        jsonObject.put(MATCH_KEY, matchObject)
+        jsonObject.putIfNotNull(NAME_KEY, experiment.name)
         jsonObject.putIfNotNull(PAYLOAD_KEY, payloadToJson(experiment.payload))
         return jsonObject
     }
