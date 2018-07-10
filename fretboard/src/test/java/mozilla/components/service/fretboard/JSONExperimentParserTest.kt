@@ -76,7 +76,7 @@ class JSONExperimentParserTest {
 
     @Test
     fun testPayloadFromJson() {
-        val json = """{"buckets":null,"name":null,"match":null,"description":null,"id":"sample-id","last_modified":null,"payload":{"a":"a","b":3,"c":3.5,"d":true,"e":[1,2,3,4]}}"""
+        val json = """{"buckets":null,"name":null,"match":null,"description":null,"id":"sample-id","last_modified":null,"values":{"a":"a","b":3,"c":3.5,"d":true,"e":[1,2,3,4]}}"""
         val experiment = JSONExperimentParser().fromJson(JSONObject(json))
         assertEquals("a", experiment.payload?.get("a"))
         assertEquals(3, experiment.payload?.get("b"))
@@ -95,7 +95,7 @@ class JSONExperimentParserTest {
         payload.put("e", listOf(1, 2, 3, 4))
         val experiment = Experiment("id", payload = payload)
         val json = JSONExperimentParser().toJson(experiment)
-        val payloadJson = json.getJSONObject("payload")
+        val payloadJson = json.getJSONObject("values")
         assertEquals("a", payloadJson.getString("a"))
         assertEquals(3, payloadJson.getInt("b"))
         assertEquals(3.5, payloadJson.getDouble("c"), 0.01)

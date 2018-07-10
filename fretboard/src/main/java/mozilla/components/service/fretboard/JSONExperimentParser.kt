@@ -42,6 +42,7 @@ class JSONExperimentParser {
             matcher,
             bucket,
             jsonObject.tryGetLong(LAST_MODIFIED_KEY),
+            jsonObject.tryGetLong(SCHEMA_KEY),
             payload)
     }
 
@@ -58,14 +59,15 @@ class JSONExperimentParser {
         matchObject.putIfNotNull(LANG_KEY, experiment.match?.language)
         matchObject.putIfNotNull(REGIONS_KEY, experiment.match?.regions?.toJsonArray())
         val bucketsObject = JSONObject()
-        bucketsObject.putIfNotNull(MAX_KEY, experiment.bucket?.max)
-        bucketsObject.putIfNotNull(MIN_KEY, experiment.bucket?.min)
+        bucketsObject.putIfNotNull(MAX_KEY, experiment.bucket?.max?.toString())
+        bucketsObject.putIfNotNull(MIN_KEY, experiment.bucket?.min?.toString())
         jsonObject.put(BUCKETS_KEY, bucketsObject)
         jsonObject.putIfNotNull(DESCRIPTION_KEY, experiment.description)
         jsonObject.put(ID_KEY, experiment.id)
         jsonObject.putIfNotNull(LAST_MODIFIED_KEY, experiment.lastModified)
         jsonObject.put(MATCH_KEY, matchObject)
         jsonObject.putIfNotNull(NAME_KEY, experiment.name)
+        jsonObject.putIfNotNull(SCHEMA_KEY, experiment.schema)
         jsonObject.putIfNotNull(PAYLOAD_KEY, payloadToJson(experiment.payload))
         return jsonObject
     }
@@ -97,49 +99,7 @@ class JSONExperimentParser {
                 else -> jsonObject.put(key, value)
             }
         }
-        return jsonObject
-    }
-
-    private fun <T> List<T>.toJsonArray(): JSONArray {
-        return fold(JSONArray()) { jsonArray, element -> jsonArray.put(element) }
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun <T> JSONArray?.toList(): List<T> {
-        if (this != null) {
-            val result = ArrayList<T>()
-            for (i in 0 until length())
-                result.add(get(i) as T)
-            return result
-        }
-        return listOf()
-    }
-
-    private fun JSONObject.tryGetString(key: String): String? {
-        if (!isNull(key)) {
-            return getString(key)
-        }
-        return null
-    }
-
-    private fun JSONObject.tryGetInt(key: String): Int? {
-        if (!isNull(key)) {
-            return getInt(key)
-        }
-        return null
-    }
-
-    private fun JSONObject.tryGetLong(key: String): Long? {
-        if (!isNull(key)) {
-            return getLong(key)
-        }
-        return null
-    }
-
-    private fun JSONObject.putIfNotNull(key: String, value: Any?) {
-        if (value != null) {
-            put(key, value)
-        }
+        return jsonObject.sortKeys()
     }
 
     companion object {
@@ -158,6 +118,7 @@ class JSONExperimentParser {
         private const val NAME_KEY = "name"
         private const val DESCRIPTION_KEY = "description"
         private const val LAST_MODIFIED_KEY = "last_modified"
-        private const val PAYLOAD_KEY = "payload"
+        private const val SCHEMA_KEY = "schema"
+        private const val PAYLOAD_KEY = "values"
     }
 }

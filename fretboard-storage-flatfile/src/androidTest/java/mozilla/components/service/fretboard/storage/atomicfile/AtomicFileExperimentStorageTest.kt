@@ -73,7 +73,7 @@ class AtomicFileExperimentStorageTest {
         assertEquals("sample-appId", experiments[0].match?.appId)
         assertEquals(20, experiments[0].bucket?.max)
         assertEquals(0, experiments[0].bucket?.min)
-        assertEquals(1526991669, experiments[0].lastModified)
+        assertEquals(1526991669L, experiments[0].lastModified)
     }
 
     @Test
