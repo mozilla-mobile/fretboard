@@ -33,7 +33,7 @@ class KintoExperimentSource(
         val experimentsDiff = getExperimentsDiff(experiments)
         val updatedExperiments = mergeExperimentsFromDiff(experimentsDiff, experiments)
         if (validateSignature &&
-            !signatureVerifier.validSignature(updatedExperiments, getMaxLastModified(experiments))) {
+            !signatureVerifier.validSignature(updatedExperiments, getMaxLastModified(updatedExperiments))) {
             throw ExperimentDownloadException("Signature verification failed")
         }
         return updatedExperiments
