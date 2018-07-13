@@ -157,6 +157,9 @@ internal class SignatureVerifier(
     }
 
     private fun signatureToASN1(signatureBytes: ByteArray): ByteArray {
+        if (signatureBytes.count() == 0 || signatureBytes.count() % 2 != 0) {
+            throw ExperimentDownloadException("Invalid signature")
+        }
         var rBytes = ByteArray(signatureBytes.count() / 2)
         for (i in 0 until signatureBytes.count() / 2) {
             rBytes += signatureBytes[i]
