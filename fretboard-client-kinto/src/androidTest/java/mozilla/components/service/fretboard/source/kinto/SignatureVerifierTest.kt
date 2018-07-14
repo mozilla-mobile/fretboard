@@ -491,6 +491,8 @@ class SignatureVerifierTest {
 
         val calendar = Calendar.getInstance()
         calendar.set(Calendar.YEAR, 2028)
+        calendar.set(Calendar.MONTH, 6)
+        calendar.set(Calendar.DAY_OF_MONTH, 13)
         testSignature(metadataBody, certChainBody, false, calendar.time)
     }
 
@@ -597,10 +599,12 @@ class SignatureVerifierTest {
 
         val calendar = Calendar.getInstance()
         calendar.set(Calendar.YEAR, 2010)
+        calendar.set(Calendar.MONTH, 6)
+        calendar.set(Calendar.DAY_OF_MONTH, 13)
         testSignature(metadataBody, certChainBody, false, calendar.time)
     }
 
-    private fun testSignature(metadataBody: String, certChainBody: String, expected: Boolean, currentDate: Date = Date()) {
+    private fun testSignature(metadataBody: String, certChainBody: String, expected: Boolean, currentDate: Date = defaultDate()) {
         val url = server.url("/").url().toString()
         server.setDispatcher(object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse {
@@ -622,5 +626,13 @@ class SignatureVerifierTest {
         val verifier = SignatureVerifier(client, KintoClient(client, url, "testbucket", "testcollection"), currentDate)
         assertEquals(expected, verifier.validSignature(experiments, experimentsJSON.getLong("last_modified")))
         server.shutdown()
+    }
+
+    private fun defaultDate(): Date {
+        val calendar = Calendar.getInstance()
+        calendar.set(Calendar.YEAR, 2018)
+        calendar.set(Calendar.MONTH, 6)
+        calendar.set(Calendar.DAY_OF_MONTH, 13)
+        return calendar.time
     }
 }
