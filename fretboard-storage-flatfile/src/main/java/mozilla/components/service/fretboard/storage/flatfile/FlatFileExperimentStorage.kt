@@ -5,25 +5,25 @@
 package mozilla.components.service.fretboard.storage.flatfile
 
 import android.util.AtomicFile
-import mozilla.components.service.fretboard.Experiment
 import mozilla.components.service.fretboard.ExperimentStorage
+import mozilla.components.service.fretboard.SyncResult
 import java.io.FileNotFoundException
 import java.io.File
 
 class FlatFileExperimentStorage(file: File) : ExperimentStorage {
     private val atomicFile: AtomicFile = AtomicFile(file)
 
-    override fun retrieve(): List<Experiment> {
+    override fun retrieve(): SyncResult {
         try {
             val experimentsJson = String(atomicFile.readFully())
             return ExperimentsSerializer().fromJson(experimentsJson)
         } catch (e: FileNotFoundException) {
-            return listOf()
+            return SyncResult(listOf(), null)
         }
     }
 
-    override fun save(experiments: List<Experiment>) {
-        val experimentsJson = ExperimentsSerializer().toJson(experiments)
+    override fun save(syncResult: SyncResult) {
+        val experimentsJson = ExperimentsSerializer().toJson(syncResult)
         atomicFile.startWrite().writer().use {
             it.append(experimentsJson)
         }
