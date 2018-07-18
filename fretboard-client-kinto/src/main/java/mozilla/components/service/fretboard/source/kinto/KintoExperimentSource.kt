@@ -5,6 +5,7 @@
 package mozilla.components.service.fretboard.source.kinto
 
 import mozilla.components.service.fretboard.Experiment
+import mozilla.components.service.fretboard.ExperimentDownloadException
 import mozilla.components.service.fretboard.ExperimentSource
 import mozilla.components.service.fretboard.JSONExperimentParser
 import org.json.JSONArray
@@ -22,16 +23,24 @@ class KintoExperimentSource(
     val baseUrl: String,
     val bucketName: String,
     val collectionName: String,
-    private val client: HttpClient = HttpURLConnectionHttpClient()
+    client: HttpClient = HttpURLConnectionHttpClient()
 ) : ExperimentSource {
+    var validateSignature = true
+    private val kintoClient = KintoClient(client, baseUrl, bucketName, collectionName)
+    private val signatureVerifier = SignatureVerifier(client, kintoClient)
+
     override fun getExperiments(experiments: List<Experiment>): List<Experiment> {
-        val experimentsDiff = getExperimentsDiff(client, experiments)
-        return mergeExperimentsFromDiff(experimentsDiff, experiments)
+        val experimentsDiff = getExperimentsDiff(experiments)
+        val updatedExperiments = mergeExperimentsFromDiff(experimentsDiff, experiments)
+        if (validateSignature &&
+            !signatureVerifier.validSignature(updatedExperiments, getMaxLastModified(updatedExperiments))) {
+            throw ExperimentDownloadException("Signature verification failed")
+        }
+        return updatedExperiments
     }
 
-    private fun getExperimentsDiff(client: HttpClient, experiments: List<Experiment>): String {
+    private fun getExperimentsDiff(experiments: List<Experiment>): String {
         val lastModified = getMaxLastModified(experiments)
-        val kintoClient = KintoClient(client, baseUrl, bucketName, collectionName)
         return if (lastModified != null) {
             kintoClient.diff(lastModified)
         } else {

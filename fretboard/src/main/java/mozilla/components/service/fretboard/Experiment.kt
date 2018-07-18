@@ -16,6 +16,7 @@ data class Experiment(
     val match: Matcher? = null,
     val bucket: Bucket? = null,
     val lastModified: Long? = null,
+    val schema: Long? = null,
     val payload: ExperimentPayload? = null
 ) {
     data class Matcher(
