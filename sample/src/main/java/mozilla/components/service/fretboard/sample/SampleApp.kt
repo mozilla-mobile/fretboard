@@ -37,8 +37,8 @@ class SampleApp : Application() {
     companion object {
         private const val EXPERIMENTS_FILE = "experiments.json"
         private const val EXPERIMENTS_JOB_ID = 7
-        private const val EXPERIMENTS_BASE_URL = "https://firefox.settings.services.mozilla.com/v1"
-        private const val EXPERIMENTS_BUCKET = "fennec"
-        private const val EXPERIMENTS_COLLECTION = "experiments"
+        private const val EXPERIMENTS_BASE_URL = "https://settings.stage.mozaws.net/v1"
+        private const val EXPERIMENTS_BUCKET = "main"
+        private const val EXPERIMENTS_COLLECTION = "focus-experiments"
     }
 }

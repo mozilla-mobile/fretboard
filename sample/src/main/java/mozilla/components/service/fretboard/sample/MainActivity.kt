@@ -17,12 +17,12 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val mainButton = findViewById<Button>(R.id.mainButton)
-        val descriptor = ExperimentDescriptor("5e23b482-8800-47be-b6dc-1a3bb6e455d4")
+        val descriptor = ExperimentDescriptor("226a913c-5f8e-4fc4-9edb-46536616e12e")
         fretboard.withExperiment(this, descriptor) {
             mainButton.setBackgroundColor(Color.RED)
         }
         val secondButton = findViewById<Button>(R.id.secondButton)
-        val secondDescriptor = ExperimentDescriptor("46894232-177a-4cd1-b620-47c0b8e5e2aa")
+        val secondDescriptor = ExperimentDescriptor("226a913c-5f8e-4fc4-9edb-46536616e12e")
         secondButton.isEnabled = fretboard.isInExperiment(this, secondDescriptor)
     }
 }

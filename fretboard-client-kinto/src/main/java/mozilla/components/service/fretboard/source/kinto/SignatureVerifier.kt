@@ -90,9 +90,6 @@ internal class SignatureVerifier(
                 verifyRoot(cert)
             } else {
                 verifyCertSignedByParent(cert, i, certificates)
-                if (i == 0) {
-                    verifyEndEntity(cert)
-                }
             }
         }
     }
@@ -127,17 +124,6 @@ internal class SignatureVerifier(
         val notAfter = certificate.notAfter
         return currentDate.time >= (notBefore.time - TimeUnit.DAYS.toMillis(CERT_VALIDITY_ROOM_DAYS)) &&
             (notAfter.time + TimeUnit.DAYS.toMillis(CERT_VALIDITY_ROOM_DAYS)) >= currentDate.time
-    }
-
-    private fun verifyEndEntity(certificate: X509Certificate) {
-        val certName = certificate.subjectX500Principal.name
-        if (certName.contains("CN=")) {
-            val cnIndex = certName.indexOf("CN=") + CN_LENGTH
-            val cn = certName.substring(cnIndex, certName.indexOf(',', cnIndex))
-            if (cn != EXPECTED_EE_CERT_CN) {
-                throw ExperimentDownloadException("EE certificate CN does not match expected value")
-            }
-        }
     }
 
     private fun verifyRoot(certificate: X509Certificate) {
@@ -188,11 +174,9 @@ internal class SignatureVerifier(
         private const val DATA_KEY = "data"
         private const val SIGNATURE_KEY = "signature"
         private const val X5U_KEY = "x5u"
-        private const val EXPECTED_EE_CERT_CN = "fennec-dlc.content-signature.mozilla.org"
         private const val CERT_VALIDITY_ROOM_DAYS = 30L
         private const val MIN_CERTIFICATES = 2
         private const val SIGNATURE_PREFIX = "Content-Signature:\u0000"
-        private const val CN_LENGTH = 3
         private const val NUMBER_OF_DER_ADDITIONAL_BYTES = 6
         private const val FIRST_DER_NUMBER: Byte = 0x30
         private const val REMAINING_DER_ADDITIONAL_BYTES = 4
