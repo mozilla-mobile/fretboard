@@ -4,9 +4,10 @@
 
 package mozilla.components.service.fretboard.source.kinto
 
-import mozilla.components.service.fretboard.Experiment
+import mozilla.components.service.fretboard.ExperimentDownloadException
 import mozilla.components.service.fretboard.ExperimentSource
 import mozilla.components.service.fretboard.JSONExperimentParser
+import mozilla.components.service.fretboard.SyncResult
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -22,16 +23,24 @@ class KintoExperimentSource(
     val baseUrl: String,
     val bucketName: String,
     val collectionName: String,
-    private val client: HttpClient = HttpURLConnectionHttpClient()
+    client: HttpClient = HttpURLConnectionHttpClient()
 ) : ExperimentSource {
-    override fun getExperiments(experiments: List<Experiment>): List<Experiment> {
-        val experimentsDiff = getExperimentsDiff(client, experiments)
-        return mergeExperimentsFromDiff(experimentsDiff, experiments)
+    var validateSignature = true
+    private val kintoClient = KintoClient(client, baseUrl, bucketName, collectionName)
+    private val signatureVerifier = SignatureVerifier(client, kintoClient)
+
+    override fun getExperiments(syncResult: SyncResult): SyncResult {
+        val experimentsDiff = getExperimentsDiff(syncResult)
+        val updatedExperiments = mergeExperimentsFromDiff(experimentsDiff, syncResult)
+        if (validateSignature &&
+            !signatureVerifier.validSignature(updatedExperiments.experiments, updatedExperiments.lastModified)) {
+            throw ExperimentDownloadException("Signature verification failed")
+        }
+        return updatedExperiments
     }
 
-    private fun getExperimentsDiff(client: HttpClient, experiments: List<Experiment>): String {
-        val lastModified = getMaxLastModified(experiments)
-        val kintoClient = KintoClient(client, baseUrl, bucketName, collectionName)
+    private fun getExperimentsDiff(syncResult: SyncResult): String {
+        val lastModified = syncResult.lastModified
         return if (lastModified != null) {
             kintoClient.diff(lastModified)
         } else {
@@ -39,53 +48,35 @@ class KintoExperimentSource(
         }
     }
 
-    private fun mergeExperimentsFromDiff(experimentsDiff: String, experiments: List<Experiment>): List<Experiment> {
+    private fun mergeExperimentsFromDiff(experimentsDiff: String, syncResult: SyncResult): SyncResult {
+        val experiments = syncResult.experiments
         val mutableExperiments = experiments.toMutableList()
         val experimentParser = JSONExperimentParser()
         val diffJsonObject = JSONObject(experimentsDiff)
         val data = diffJsonObject.get(DATA_KEY)
-        if (data is JSONObject) {
-            if (data.getBoolean(DELETED_KEY)) {
-                mergeDeleteDiff(data, mutableExperiments)
-            }
-        } else {
-            mergeAddUpdateDiff(experimentParser, data as JSONArray, mutableExperiments)
-        }
-        return mutableExperiments
-    }
-
-    private fun mergeDeleteDiff(data: JSONObject, mutableExperiments: MutableList<Experiment>) {
-        mutableExperiments.remove(mutableExperiments.single { it.id == data.getString(ID_KEY) })
-    }
-
-    private fun mergeAddUpdateDiff(
-        experimentParser: JSONExperimentParser,
-        experimentsJsonArray: JSONArray,
-        mutableExperiments: MutableList<Experiment>
-    ) {
+        val experimentsJsonArray = data as JSONArray
+        var maxLastModified: Long? = syncResult.lastModified
         for (i in 0 until experimentsJsonArray.length()) {
             val experimentJsonObject = experimentsJsonArray[i] as JSONObject
             val experiment = mutableExperiments.singleOrNull { it.id == experimentJsonObject.getString(ID_KEY) }
-            if (experiment != null)
+            if (experiment != null) {
                 mutableExperiments.remove(experiment)
-            mutableExperiments.add(experimentParser.fromJson(experimentJsonObject))
-        }
-    }
-
-    private fun getMaxLastModified(experiments: List<Experiment>): Long? {
-        var maxLastModified: Long = -1
-        for (experiment in experiments) {
-            val lastModified = experiment.lastModified
-            if (lastModified != null && lastModified > maxLastModified) {
-                maxLastModified = lastModified
+            }
+            if (!experimentJsonObject.has(DELETED_KEY)) {
+                mutableExperiments.add(experimentParser.fromJson(experimentJsonObject))
+            }
+            val lastModifiedDate = experimentJsonObject.getLong(LAST_MODIFIED_KEY)
+            if (maxLastModified == null || lastModifiedDate > maxLastModified) {
+                maxLastModified = lastModifiedDate
             }
         }
-        return if (maxLastModified > 0) maxLastModified else null
+        return SyncResult(mutableExperiments, maxLastModified)
     }
 
     companion object {
         private const val ID_KEY = "id"
         private const val DATA_KEY = "data"
         private const val DELETED_KEY = "deleted"
+        private const val LAST_MODIFIED_KEY = "last_modified"
     }
 }

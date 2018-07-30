@@ -6,7 +6,6 @@ package mozilla.components.service.fretboard
 
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.times
@@ -38,23 +37,25 @@ class FretboardTest {
     @Test
     fun testUpdateExperimentsEmptyStorage() {
         val experimentSource = mock(ExperimentSource::class.java)
-        `when`(experimentSource.getExperiments(ArgumentMatchers.anyList())).thenReturn(listOf(Experiment("id")))
+        val result = SyncResult(listOf(), null)
+        `when`(experimentSource.getExperiments(result)).thenReturn(SyncResult(listOf(Experiment("id")), null))
         val experimentStorage = mock(ExperimentStorage::class.java)
+        `when`(experimentStorage.retrieve()).thenReturn(result)
         val fretboard = Fretboard(experimentSource, experimentStorage)
         fretboard.updateExperiments()
-        verify(experimentSource).getExperiments(listOf())
-        verify(experimentStorage).save(listOf(Experiment("id")))
+        verify(experimentSource).getExperiments(result)
+        verify(experimentStorage).save(SyncResult(listOf(Experiment("id")), null))
     }
 
     @Test
     fun testUpdateExperimentsFromStorage() {
         val experimentSource = mock(ExperimentSource::class.java)
-        `when`(experimentSource.getExperiments(ArgumentMatchers.anyList())).thenReturn(listOf(Experiment("id")))
+        `when`(experimentSource.getExperiments(SyncResult(listOf(Experiment("id0")), null))).thenReturn(SyncResult(listOf(Experiment("id")), null))
         val experimentStorage = mock(ExperimentStorage::class.java)
-        `when`(experimentStorage.retrieve()).thenReturn(listOf(Experiment("id0")))
+        `when`(experimentStorage.retrieve()).thenReturn(SyncResult(listOf(Experiment("id0")), null))
         val fretboard = Fretboard(experimentSource, experimentStorage)
         fretboard.updateExperiments()
-        verify(experimentSource).getExperiments(listOf(Experiment("id0")))
-        verify(experimentStorage).save(listOf(Experiment("id")))
+        verify(experimentSource).getExperiments(SyncResult(listOf(Experiment("id0")), null))
+        verify(experimentStorage).save(SyncResult(listOf(Experiment("id")), null))
     }
 }
