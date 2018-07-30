@@ -1,3 +1,5 @@
+# ⚠️ This library has been moved to the [android-components repository](https://github.com/mozilla-mobile/android-components).
+
 # Fretboard
 
 [![Task Status](https://github.taskcluster.net/v1/repository/mozilla-mobile/fretboard/master/badge.svg)](https://github.taskcluster.net/v1/repository/mozilla-mobile/fretboard/master/latest)
